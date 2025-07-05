@@ -1,0 +1,163 @@
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>Roblox-Inspired Character</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+
+    /* 2007-style leaderboard */
+    .leaderboard {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(192, 192, 192, 0.7);
+      border: 1px solid #aaa;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      padding: 4px 8px;
+      color: #000;
+      z-index: 10;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+</head>
+<body>
+
+<!-- 🧾 Simple Transparent Leaderboard -->
+<div class="leaderboard">AAAHHH</div>
+
+<script>
+// THREE.js scene setup
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Lighting
+const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+scene.add(light);
+
+// Create baseplate
+const baseplateGeometry = new THREE.BoxGeometry(50, 1, 50);
+const baseplateMaterial = new THREE.MeshStandardMaterial({ color: 0x00a000 });
+const baseplate = new THREE.Mesh(baseplateGeometry, baseplateMaterial);
+baseplate.position.y = -0.5;
+scene.add(baseplate);
+
+// Character parts
+function createPart(w, h, d, color) {
+  return new THREE.Mesh(
+    new THREE.BoxGeometry(w, h, d),
+    new THREE.MeshStandardMaterial({ color: color })
+  );
+}
+
+const torso = createPart(2, 2, 1, 0x00aaff);
+const head = createPart(2, 1, 1, 0xffcc99);
+head.position.y = 1.5;
+
+const leftArm = createPart(1, 2, 1, 0xff0000);
+leftArm.position.x = -1.5;
+
+const rightArm = createPart(1, 2, 1, 0xff0000);
+rightArm.position.x = 1.5;
+
+const leftLeg = createPart(1, 2, 1, 0x0000ff);
+leftLeg.position.set(-0.5, -2, 0);
+
+const rightLeg = createPart(1, 2, 1, 0x0000ff);
+rightLeg.position.set(0.5, -2, 0);
+
+// Group all parts
+const character = new THREE.Group();
+character.add(torso);
+character.add(head);
+character.add(leftArm);
+character.add(rightArm);
+character.add(leftLeg);
+character.add(rightLeg);
+scene.add(character);
+
+// Position camera
+camera.position.z = 8;
+camera.position.y = 4;
+camera.lookAt(character.position);
+
+// Controls
+const keys = {};
+document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+// Physics
+let velocityY = 0;
+let onGround = false;
+
+// Respawn
+function respawn() {
+  character.position.set(0, 5, 0);
+  velocityY = 0;
+}
+
+// Animate
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Movement
+  let moveX = 0;
+  let moveZ = 0;
+  const speed = 0.1;
+
+  if (keys['w']) moveZ -= speed;
+  if (keys['s']) moveZ += speed;
+  if (keys['a']) moveX -= speed;
+  if (keys['d']) moveX += speed;
+
+  if (moveX !== 0 || moveZ !== 0) {
+    const angle = Math.atan2(moveX, moveZ);
+    const targetRotation = angle;
+    character.rotation.y += (targetRotation - character.rotation.y) * 0.2;
+  }
+
+  character.position.x += moveX;
+  character.position.z += moveZ;
+
+  // Gravity
+  velocityY -= 0.01;
+  character.position.y += velocityY;
+
+  // Ground collision
+  if (character.position.y <= 1) {
+    character.position.y = 1;
+    velocityY = 0;
+    onGround = true;
+  } else {
+    onGround = false;
+  }
+
+  // Jump
+  if (keys[' '] && onGround) {
+    velocityY = 0.18;
+    character.position.y -= 1; // Shift pivot down 1 stud
+  }
+
+  // Void fall
+  if (character.position.y < -20) {
+    respawn();
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// Resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script><canvas data-engine="three.js r155" width="1365" height="919" style="display: block; width: 1365px; height: 919px;"></canvas>
+
+
+
+</body></html>
